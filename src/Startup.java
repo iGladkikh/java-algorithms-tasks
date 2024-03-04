@@ -1,52 +1,77 @@
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
+import java.math.BigInteger;
+import java.util.*;
 
 public class Startup {
-    static long amount;
-    static int partnersCount;
+    static BigInteger amount;
+    static BigInteger partnersCount;
     static int daysCount;
     static Scanner scanner;
 
     public static void main(String[] args) {
         scanner = new Scanner(System.in);
         String[] in = scanner.nextLine().split(" ", 3);
-        amount = Long.parseLong(in[0]);
-        partnersCount = Integer.parseInt(in[1]);
+        amount = new BigInteger(in[0]);
+        partnersCount = new BigInteger(in[1]);
         daysCount = Integer.parseInt(in[2]);
 
-        ArrayList<Long> amounts = new ArrayList<>(List.of(amount));
-        ArrayList<ArrayList<Long>> result = getAvailableAmount(amounts);
+        ArrayList<BigInteger> amounts = new ArrayList<>(List.of(amount));
+        Map<Integer, ArrayList<BigInteger>> result = getAvailableAmount(amounts);
 
-        if (result.size() < daysCount) {
-            System.out.print(-1);
+        if (result.containsKey(daysCount - 1)) {
+            System.out.print(result.get(daysCount - 1).getLast());
         } else {
-            System.out.print(result.getLast().getLast());
+            System.out.print(-1);
         }
     }
 
-    static ArrayList<ArrayList<Long>> getAvailableAmount(ArrayList<Long> amounts) {
-        ArrayList<Long> checkAmounts = amounts;
-        ArrayList<ArrayList<Long>> availableAmounts = new ArrayList<>();
+    static Map<Integer, ArrayList<BigInteger>> getAvailableAmount(ArrayList<BigInteger> amounts) {
+        ArrayList<BigInteger> checkAmounts = amounts;
+        Map<Integer, ArrayList<BigInteger>> availableAmounts = new HashMap<>();
         for (int i = 0; i < daysCount; i++) {
-            ArrayList<Long> nextAvailableAmounts = getAvailableTomorrowAmounts(checkAmounts);
+            ArrayList<BigInteger> nextAvailableAmounts = getAvailableTomorrowAmounts(checkAmounts);
             if (!nextAvailableAmounts.isEmpty()) {
-                availableAmounts.add(nextAvailableAmounts);
+                availableAmounts.put(i, nextAvailableAmounts);
                 checkAmounts = nextAvailableAmounts;
-            }
-            else {
+
+                if (i > 0 &&
+                        availableAmounts.get(i - 1).size() == 1 &&
+                        nextAvailableAmounts.size() == 1 &&
+                        nextAvailableAmounts.getFirst()
+                                .mod(availableAmounts.get(i - 1).getFirst())
+                                .compareTo(BigInteger.ZERO) == 0
+                ) {
+                    int[] end = new int[daysCount - i - 1];
+                    BigInteger finalResult = new BigInteger(
+                            nextAvailableAmounts.getFirst().toString() +
+                                    getStringFromArray(end));
+                    ArrayList<BigInteger> finalAmounts = new ArrayList<>();
+                    finalAmounts.add(finalResult);
+                    availableAmounts.put(daysCount - 1, finalAmounts);
+                    break;
+                }
+            } else {
                 break;
             }
         }
         return availableAmounts;
     }
 
-    static ArrayList<Long> getAvailableTomorrowAmounts(ArrayList<Long> amounts) {
-        ArrayList<Long> nextAmounts = new ArrayList<>();
-        for (long amount : amounts) {
+    static String getStringFromArray(int[] array) {
+        StringBuilder builder = new StringBuilder(array.length);
+        for (int ch : array) {
+            builder.append(ch);
+        }
+        return builder.toString();
+    }
+
+    static ArrayList<BigInteger> getAvailableTomorrowAmounts(ArrayList<BigInteger> amounts) {
+        ArrayList<BigInteger> nextAmounts = new ArrayList<>();
+        for (BigInteger amount : amounts) {
+            BigInteger nextTenAmount = amount.multiply(BigInteger.TEN);
             for (int j = 0; j <= 9; j++) {
-                long nextAmount = amount * 10 + j;
-                if (nextAmount % partnersCount == 0) {
+                BigInteger nextAmount = nextTenAmount.add(BigInteger.valueOf(j));
+
+                if (nextAmount.remainder(partnersCount).compareTo(BigInteger.ZERO) == 0) {
                     nextAmounts.add(nextAmount);
                 }
             }
